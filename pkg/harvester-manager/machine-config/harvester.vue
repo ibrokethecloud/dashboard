@@ -782,7 +782,10 @@ export default {
             const vGpuTypes = vGPURequests?.map((r) => r?.deviceName).filter((f) => f) || [];
 
             if (vGpuTypes.includes(type)) {
-              return acc + machinePool.pool.quantity;
+              // Existing pools reuse their allocated devices and only need a spare for replacement.
+              const required = this.isEdit && !machinePool.create ? 1 : machinePool.pool.quantity;
+
+              return acc + required;
             }
 
             return acc;
@@ -793,7 +796,7 @@ export default {
             allocated
           };
         })
-        .filter(({ vGpu, allocated }) => vGpu && vGpu.allocatable > 0 && vGpu.allocatable < allocated);
+        .filter(({ vGpu, allocated }) => vGpu && vGpu.allocatable !== null && vGpu.allocatable < allocated);
 
       notAllocatable.forEach(({ vGpu, allocated }) => {
         const message = this.$store.getters['i18n/t']('cluster.credential.harvester.vGpus.errors.notAllocatable', {
